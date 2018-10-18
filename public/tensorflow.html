@@ -1,0 +1,148 @@
+<html>
+  <head>
+    <!-- Load TensorFlow.js -->
+    <script src="https://rawgit.com/nicolaspanel/numjs/893016ec40e62eaaa126e1024dbe250aafb3014b/dist/numjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.13.0"> </script>
+  </head>
+
+  <body>
+    <div id="output_field"></div>
+    <div id="playerinfo"></div>
+    <div id="action-ratio"></div>
+
+    <script src="brain.js"></script>
+    <script src="qlearning.js"></script>
+    <script src="pong.js"></script>
+
+    <!-- Place your code in the script tag below. You can also use an external .js file -->
+    <script>
+
+      const EXPERIENCE_SIZE = 500
+
+      function agent() {
+        this.brain = new Brain()
+
+        // [
+        //  [BALL_X, BALL_Y, PLAYER_X, PLAYER_Y, PLAYER_VELOCITY_X, PLAYER_VELOCITY_Y]
+        // ]
+        // 
+        // [
+        //  [PLAYER_LEFT, DO_NOTHING, PLAYER_RIGHT]
+        // ]
+
+        // const xs = tf.tensor2d([[0, 1, 0, 1, 0, 1]], [1, feature_count]);
+        // const ys = tf.tensor2d([[0, 0, 0]], [1, label_count]);
+
+        // await model.fit(xs, ys, {epochs: 500});
+
+      }
+
+      agent.prototype.predict = function(observation) {
+        const prediction = this.brain.predict(observation);
+        return prediction
+      }
+
+      agent.prototype.learn = async function(reward, observation) {
+        await this.brain.learn(reward, observation)
+      }
+
+      agent.prototype.act = function(observation) {
+        prediction = this.brain.see(observation, [-1,0,1]);
+        return prediction
+      }
+
+      const agentSmith = new agent()
+      let reward = 0
+      const reward_table = {
+        null: 0,
+        [BOTTOM_PLAYER_GOALED]: 1,
+        [TOP_PLAYER_GOALED]: -1,
+        [BOTTOM_PLAYER_HIT_BALL]: 0,
+        [TOP_PLAYER_HIT_BALL]: 0,
+        [BOTTOM_PLAYER_WON]: 32,
+        [TOP_PLAYER_WON]: -32,
+      };
+
+      let action = undefined
+
+      let games = 0;
+
+      let points = {
+        top: 0,
+        bottom: 0
+      }
+
+      const actions = {
+        '-1':0,
+        '0':0,
+        '1':0
+      }
+
+      var update = async function () {
+          computer.update(ball);
+
+          ball_prev_y = ball.y;
+          ball_prev_x = ball.x;
+          let winner = ball.update(ai.paddle, computer.paddle);
+
+          if (winner == TOP_PLAYER_GOALED) {
+            points.top++;
+            winner = points.top >= 32 ? TOP_PLAYER_WON : winner
+          } else if (winner == BOTTOM_PLAYER_GOALED) {
+            points.bottom++;
+            winner = points.bottom >= 32 ? BOTTOM_PLAYER_WON : winner
+          }
+
+          if (winner == TOP_PLAYER_WON || winner == BOTTOM_PLAYER_WON) {
+            points = {
+              top: 0,
+              bottom: 0
+            }
+            games++;
+          }
+
+          const observation = [
+              ai.paddle.x,
+              ai.paddle.y,
+              ball_prev_x,
+              ball_prev_y,
+              ball.x,
+              ball.y,
+              computer.paddle.x,
+              computer.paddle.y,
+          ];
+
+          reward = reward_table[winner]
+          console.log({reward, observation, action})
+          // if (reward > 0 || reward < 0)
+          //   debugger;
+
+          await agentSmith.learn(reward, observation);
+          action = agentSmith.act(observation);
+          actions[action]++;
+          ai.update(action);
+          reward = 0
+
+          document.getElementById('action-ratio').innerText = JSON.stringify(actions);
+          document.getElementById('output_field').innerText = JSON.stringify({
+            iteration: agentSmith.brain.qlearning.iteration, 
+            games, 
+            points, 
+            r_sum: agentSmith.brain.r_sum
+          })
+          return {winner, observation}
+      };
+
+      var step = async function () {
+          await update();
+          render();
+          animate(step);
+      };
+
+      document.body.appendChild(canvas);
+      animate(step);
+
+    </script>
+
+  </body>
+</html>

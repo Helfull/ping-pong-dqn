@@ -13,7 +13,9 @@ class Ball extends Entity {
         this.speedMultiplier = 1.05
         this.radius = 20;
         this.closest = new Vector2(0, 0);
+        this.closestCircle = new Vector2(0, 0)
         this.distCenter = new Vector2(0,0);
+        this.R = new Vector2(0, 0)
 
         // this.setVelY(rand(-10, 10));
         // this.setVelX(rand(-10, 10));
@@ -68,6 +70,8 @@ class Ball extends Entity {
                 this.game.field.x / 2,
                 this.game.field.y / 2
             );
+
+            this.velocity = new Vector2(this.force, -this.force);
         }
 
         if (this.game.debug) {
@@ -123,11 +127,18 @@ class Ball extends Entity {
             this.position.y - closest.y
         );
 
+        self.R = this.circleClosest(closest);
+
         const distSqrt = (this.distCenter.x * this.distCenter.x) + (this.distCenter.y * this.distCenter.y);
         return distSqrt < (this.radius *.85  * this.radius * .85);
     }
 
-
+    circleClosest(closest) {
+        // p1 - ((p1 - p2) * r)
+        let vectorP1ToP2 = this.position.subtract(closest);
+        let posR = vectorP1ToP2.multiplyBy(this.radius);
+        return this.position.subtract(posR);
+    }
 
     draw() {
         this.game.renderer.defaultStyle();
@@ -146,7 +157,9 @@ class Ball extends Entity {
         this.game.renderer.arc(this.position, 2);
         this.game.renderer.line(this.position, this.closest);
         this.game.renderer.arc(this.closest, 2);
+        this.game.renderer.arc(this.closestCircle, 2);
 
         this.game.renderer.rect(new Vector2(0,0), new Vector2(10, this.game.field.y));
+        this.game.renderer.arc(self.R, 2);
     }
 }

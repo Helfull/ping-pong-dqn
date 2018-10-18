@@ -1,10 +1,11 @@
 class Game {
-	constructor(ctx) {
+	constructor(ctx, fieldSize) {
+		this.field = fieldSize || new Vector2(600, 800);
+
 		this.renderer = new Renderer(ctx, this);
 		this.ball = null;
 		this.player1 = null;
 		this.player2 = null;
-		this.field = new Vector2(600, 800);
 		this.pxRationX = ctx.canvas.width / this.field.x;
 		this.pxRationY = ctx.canvas.height / this.field.y;
 		this.pxRatio = new Vector2(this.pxRationX, this.pxRationY);
